@@ -29,6 +29,12 @@ It does **not** advertise itself over mDNS. Discovery is centralized in the `nvp
 | `--cluster-dir <path>` | _(none)_ | Cluster config dir (`node.crt`/`node.key` + `trusted/`); when set, the primary port carries one cluster-gated listener. While this node is a cluster member, `/v1/node-info` is served **only** over cluster-scoped pin-based mTLS, to pinned cluster peers — or this node itself via self-trust — and a plaintext caller is refused with `403`; while it is not a member the plaintext inventory is served as usual. Membership is re-read per request. Takes precedence over the `--cert` path |
 | `--version` | | Print version and exit |
 
+The environment variable `NVPAIR_LEGACY_GPU_SUPPORT` is also accepted. When set
+to `1`, `true`, `yes`, or `on`, the fork adds stable GPU IDs and publishes
+detected NVIDIA adapters in `inference_hardware_ids`. This is an opt-in
+hardware-policy override for legacy GPUs; it does not alter the inference
+engine or guarantee that a model can run.
+
 `--log-level` is also accepted (registered by `nvpair-shared/applog`).
 
 ### TLS / mTLS configuration
