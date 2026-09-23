@@ -25,7 +25,7 @@ jobs:
     runs-on: [self-hosted, legacy-gpu, gtx-980]
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
         with:
           node: 'false'
@@ -43,7 +43,7 @@ jobs:
     runs-on: [self-hosted, legacy-gpu, gtx-1070]
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
         with:
           node: 'false'
@@ -61,7 +61,7 @@ jobs:
     runs-on: [self-hosted, legacy-gpu, rtx-2080-ti]
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - uses: ./.github/actions/setup
         with:
           node: 'false'
