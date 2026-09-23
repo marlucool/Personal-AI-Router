@@ -1,0 +1,42 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Legacy GPU hardware CI
+
+The fork includes a manual GitHub Actions workflow that can exercise the real
+GPU detector on physical GTX 980, GTX 1070, and RTX 2080 Ti machines.
+
+## Runner labels
+
+Register one self-hosted runner per test machine and add these labels:
+
+| Machine | Required labels |
+|---|---|
+| GTX 980 | `self-hosted`, `legacy-gpu`, `gtx-980` |
+| GTX 1070 | `self-hosted`, `legacy-gpu`, `gtx-1070` |
+| RTX 2080 Ti | `self-hosted`, `legacy-gpu`, `rtx-2080-ti` |
+
+GitHub routes a job only to a runner matching all labels, so the test cannot
+accidentally run the GTX 980 test on the RTX 2080 Ti machine.
+
+## What the workflow validates
+
+The hardware test calls the actual platform GPU detector used by
+`nvpair-node-info`, checks that the expected adapter is present and reports
+non-zero VRAM, then exercises the opt-in legacy metadata path.
+
+This validates the PAIR-side detection/readiness code on the real GPU. It does
+not prove that Ollama, LM Studio, CUDA, llama.cpp, or a particular GGUF model
+can run on that machine. Those remain inference-engine/runtime compatibility
+questions.
+
+## Why it is manual
+
+This is intentionally not a normal pull-request check. The repository is a
+public fork, and GitHub warns that self-hosted runners can be persistently
+compromised by untrusted workflow code. Keep the physical-GPU workflow manual
+and only run it for code you trust.
+
+The normal hosted CI continues to cover unit tests, builds, and static checks.
