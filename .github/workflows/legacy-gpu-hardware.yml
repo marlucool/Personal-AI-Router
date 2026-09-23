@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Physical-GPU validation for the legacy compatibility fork.
+#
+# This workflow is deliberately manual. The repository is a public fork, and
+# GitHub recommends against exposing self-hosted runners to untrusted pull
+# request code. A maintainer can run this workflow manually against a selected
+# branch after the matching physical runner has been registered.
+name: Legacy GPU hardware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-gpu-hardware
+  cancel-in-progress: false
+
+jobs:
+  gtx-980:
+    name: GTX 980 hardware
+    runs-on: [self-hosted, legacy-gpu, gtx-980]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          node: 'false'
+          go: 'true'
+      - name: Detect GTX 980 and validate legacy metadata
+        working-directory: services/nvpair-node-info
+        env:
+          NVPAIR_HARDWARE_GPU_TEST: '1'
+          NVPAIR_EXPECTED_GPU: 'GTX 980'
+          NVPAIR_LEGACY_GPU_SUPPORT: '1'
+        run: go test ./... -run TestLegacyGPUHardwareOnHost -count=1 -v
+
+  gtx-1070:
+    name: GTX 1070 hardware
+    runs-on: [self-hosted, legacy-gpu, gtx-1070]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          node: 'false'
+          go: 'true'
+      - name: Detect GTX 1070 and validate legacy metadata
+        working-directory: services/nvpair-node-info
+        env:
+          NVPAIR_HARDWARE_GPU_TEST: '1'
+          NVPAIR_EXPECTED_GPU: 'GTX 1070'
+          NVPAIR_LEGACY_GPU_SUPPORT: '1'
+        run: go test ./... -run TestLegacyGPUHardwareOnHost -count=1 -v
+
+  rtx-2080-ti:
+    name: RTX 2080 Ti hardware
+    runs-on: [self-hosted, legacy-gpu, rtx-2080-ti]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup
+        with:
+          node: 'false'
+          go: 'true'
+      - name: Detect RTX 2080 Ti and validate legacy metadata
+        working-directory: services/nvpair-node-info
+        env:
+          NVPAIR_HARDWARE_GPU_TEST: '1'
+          NVPAIR_EXPECTED_GPU: 'RTX 2080 Ti'
+          NVPAIR_LEGACY_GPU_SUPPORT: '1'
+        run: go test ./... -run TestLegacyGPUHardwareOnHost -count=1 -v
