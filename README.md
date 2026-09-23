@@ -40,6 +40,26 @@ one, and both report live GPU and memory use throughout.
 | **Mixing nodes** | Windows, Linux, and macOS nodes can all be paired with each other |
 | **Inference engines** | Ollama and LM Studio |
 
+### Fork-specific legacy GPU compatibility
+
+This fork adds an opt-in compatibility mode for older NVIDIA GeForce GPUs that
+are outside NVIDIA's current PAIR validation policy. Enable it with:
+
+```text
+NVPAIR_LEGACY_GPU_SUPPORT=1
+```
+
+When enabled, PAIR's node-info service publishes stable GPU IDs and marks
+detected NVIDIA adapters as inference-ready metadata for the desktop client.
+This does **not** change CUDA, `llama.cpp`, Ollama, or LM Studio's own hardware
+requirements, and it does not guarantee that a particular model will load.
+
+For GTX 980 / GTX 1070 systems, the intended setup is to run a compatible local
+engine (for example, LM Studio with a GGUF model), enable the compatibility
+mode before starting PAIR, and let PAIR route requests to the node only after
+the engine advertises the model. See [Legacy GPU support](docs/legacy-gpu-support.mdx)
+for the setup and limitations.
+
 **PAIR running on a machine does not mean an engine will.** PAIR itself runs on
 any supported Windows, Linux, or macOS machine. Each engine sets its own requirements
 for the operating system, GPU, and drivers, and each model needs enough memory to
