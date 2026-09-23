@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Legacy GPU simulation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'services/nvpair-node-info/**'
+      - '.github/workflows/legacy-gpu-simulation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-gpu-simulation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulate:
+    name: ${{ matrix.gpu }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - gpu: GTX 980
+            vram: 4096
+          - gpu: GTX 1070
+            vram: 8192
+          - gpu: RTX 2080 Ti
+            vram: 11264
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: ./.github/actions/setup
+        with:
+          node: 'false'
+          go: 'true'
+      - name: Simulate GPU inventory
+        working-directory: services/nvpair-node-info
+        env:
+          NVPAIR_SIMULATED_GPU: ${{ matrix.gpu }}
+          NVPAIR_SIMULATED_VRAM_MB: ${{ matrix.vram }}
+        run: go test ./... -run TestLegacyGPUSimulation -count=1 -v
