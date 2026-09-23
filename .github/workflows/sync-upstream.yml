@@ -29,16 +29,12 @@ jobs:
           git remote add upstream https://github.com/NVIDIA/Personal-AI-Router.git
           git fetch upstream develop
 
-          # Keep develop aligned with NVIDIA's develop branch.
+          # Keep develop current with NVIDIA while preserving fork-only commits.
           git checkout develop
-          git merge --ff-only upstream/develop || {
-            echo "develop has diverged from NVIDIA upstream."
-            echo "Resolve the divergence manually rather than silently overwriting changes."
-            exit 1
-          }
+          git merge --no-edit upstream/develop
           git push origin develop
 
-          # Update the custom branch while preserving its commits.
+          # Rebase the custom branch onto the newly-synced fork develop.
           git checkout legacy-gpu-support
           git rebase origin/develop
           git push --force-with-lease origin legacy-gpu-support
