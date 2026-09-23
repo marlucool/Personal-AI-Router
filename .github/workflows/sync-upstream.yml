@@ -1,0 +1,44 @@
+name: Sync with NVIDIA upstream
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync fork branches
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git remote add upstream https://github.com/NVIDIA/Personal-AI-Router.git
+          git fetch upstream develop
+
+          # Keep develop aligned with NVIDIA's develop branch.
+          git checkout develop
+          git merge --ff-only upstream/develop || {
+            echo "develop has diverged from NVIDIA upstream."
+            echo "Resolve the divergence manually rather than silently overwriting changes."
+            exit 1
+          }
+          git push origin develop
+
+          # Update the custom branch while preserving its commits.
+          git checkout legacy-gpu-support
+          git rebase origin/develop
+          git push --force-with-lease origin legacy-gpu-support
