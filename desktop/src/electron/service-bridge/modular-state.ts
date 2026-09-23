@@ -211,6 +211,7 @@ function anyEngineUp(node: ModularNode): boolean {
 }
 
 interface ModularGpu {
+    id: string
     name: string
     vramBytes: number
     vramUsedBytes: number
@@ -497,6 +498,7 @@ function gpuArrayValue(value: JsonValue | undefined): ModularGpu[] {
         const obj = objectValue(entry)
         if (!obj) continue
         gpus.push({
+            id: stringValue(obj.id),
             name: stringValue(obj.name),
             vramBytes: numberValue(obj.vram_bytes),
             vramUsedBytes: numberValue(obj.vram_used_bytes),
@@ -532,6 +534,7 @@ function normalizeLastSeen(value: number): number {
 
 function sameGpu(left: ModularGpu, right: ModularGpu): boolean {
     return (
+        left.id === right.id &&
         left.name === right.name &&
         left.vramBytes === right.vramBytes &&
         left.vramUsedBytes === right.vramUsedBytes &&
@@ -629,7 +632,7 @@ function toNodeItem(node: ModularNode, selfId: string | null): NodeItem {
                 threads: node.cpu?.cores ?? 0
             },
             gpus: node.gpus.map((gpu, index) => ({
-                id: `${node.id}:gpu:${index}`,
+                id: gpu.id || `${node.id}:gpu:${index}`,
                 name: gpu.name,
                 vramTotal: gpu.vramBytes
             })),
