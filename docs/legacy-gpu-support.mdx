@@ -1,0 +1,113 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# Legacy GPU compatibility
+
+This fork adds an opt-in compatibility mode for older NVIDIA GeForce GPUs
+outside NVIDIA's current PAIR validation policy.
+
+NVIDIA's current PAIR documentation lists GeForce RTX 20 Series and newer as
+the supported GeForce class. The upstream source does not contain a simple
+RTX-generation check in the GPU detector or request router, so this fork keeps
+normal behavior unchanged and adds an explicit override for nodes where the
+local inference engine is known to work.
+
+## Enable
+
+Set this environment variable before starting PAIR:
+
+```text
+NVPAIR_LEGACY_GPU_SUPPORT=1
+```
+
+Accepted truthy values are `1`, `true`, `yes`, and `on`.
+
+Examples:
+
+Windows PowerShell:
+
+```powershell
+$env:NVPAIR_LEGACY_GPU_SUPPORT = "1"
+```
+
+Windows CMD:
+
+```cmd
+set NVPAIR_LEGACY_GPU_SUPPORT=1
+```
+
+Linux/macOS:
+
+```bash
+export NVPAIR_LEGACY_GPU_SUPPORT=1
+```
+
+Restart PAIR after setting the variable.
+
+## What changes
+
+When enabled, PAIR's node-info service:
+
+1. assigns stable IDs to detected GPUs;
+2. publishes those IDs in the node inventory; and
+3. reports detected NVIDIA adapters in `inference_hardware_ids`.
+
+The desktop uses the backend-provided GPU IDs when present, so an explicitly
+enabled legacy NVIDIA node remains visible as inference-capable metadata.
+
+When the variable is not enabled, the fork does not apply this override.
+
+## What it does not change
+
+This mode does not add CUDA support, modify llama.cpp, modify Ollama or LM
+Studio, make models fit in VRAM, combine VRAM between machines, or guarantee
+that a model will load.
+
+The inference engine remains the final authority. PAIR routes a request to a
+node only after the node's engine is reachable and advertises the requested
+model.
+
+## GTX 980 / GTX 1070 example
+
+A typical setup for this fork is:
+
+```text
+GTX 980 machine   -> LM Studio -> small GGUF model
+GTX 1070 machine  -> LM Studio -> another GGUF model
+RTX 2080 Ti       -> LM Studio/Ollama -> larger model
+                         |
+                       PAIR
+                         |
+                    local proxy
+```
+
+PAIR still routes each independent request to one node. It does not merge the
+GPUs into one larger logical GPU.
+
+The first validation step should always be the engine itself: confirm the
+chosen LM Studio runtime can load the GGUF model on the GTX 980/1070 machine
+and that the local OpenAI-compatible server is working. Only then should PAIR
+be used as the routing layer.
+
+## Disable
+
+Remove the variable from the environment and restart PAIR:
+
+```text
+NVPAIR_LEGACY_GPU_SUPPORT
+```
+
+## Troubleshooting
+
+For a legacy node, verify these in order:
+
+- the NVIDIA driver sees the GPU;
+- the inference engine starts successfully;
+- the model loads successfully in the engine;
+- the engine advertises the model through its local API; and
+- PAIR sees the node and its model inventory.
+
+For a bug report, include the PAIR version, operating system, exact GPU,
+engine/runtime version, model and quantization, and relevant logs.
