@@ -1,0 +1,84 @@
+---
+title: Mesh-LLM + Tailscale integration
+description: PAIR-managed distributed inference over a Tailscale tailnet
+---
+
+# Mesh-LLM + Tailscale
+
+PAIR's intended distributed-inference path is to manage Mesh-LLM as a component and use Tailscale as the private network boundary.
+
+## Why this is different from the current Mesh-LLM join flow
+
+Current Mesh-LLM private meshes use invite tokens. LAN mDNS deliberately exposes only token fingerprints, so a node still needs the matching Mesh-LLM token to join.
+
+That is not a good fit for a PAIR installer: users should not have to copy a Mesh-LLM token from PC1 to PC2.
+
+The target flow is:
+
+1. Install PAIR.
+2. PAIR installs/configures Mesh-LLM.
+3. The user authorizes Tailscale for the PAIR/Mesh-LLM node.
+4. Mesh-LLM enters Tailscale networking mode.
+5. Mesh-LLM discovers other PAIR-managed nodes on the same tailnet.
+6. No Mesh-LLM invite token is copied between machines.
+
+## Required Mesh-LLM changes
+
+The upstream Mesh-LLM repository needs a first-class Tailscale networking/discovery mode. PAIR cannot safely emulate this by treating a Tailscale IP as an ordinary LAN address because Mesh-LLM's current invite/bootstrap protocol also authenticates the mesh membership.
+
+The Mesh-LLM implementation should:
+
+- retain the existing Iroh/Nostr/invite-token paths;
+- add a feature-gated `tailscale` network backend;
+- discover peers through the tailnet;
+- keep Mesh-LLM node identity separate from Tailscale identity;
+- use the Tailscale path for inference and split-model traffic;
+- avoid Nostr publication in Tailscale-private mode;
+- expose machine-readable Tailscale status and discovered peers.
+
+Tailscale's Rust library is currently an experimental preview. The implementation must not advertise unsupported production capabilities until its required dataplane features are available.
+
+## PAIR responsibilities
+
+PAIR should own lifecycle and UX:
+
+- detect whether Tailscale connectivity is already available;
+- guide the user through one-time authorization;
+- install/configure Mesh-LLM;
+- start and monitor Mesh-LLM;
+- select Tailscale-private mode;
+- expose Mesh-LLM's OpenAI-compatible endpoint to PAIR;
+- report Mesh-LLM/Tailscale health in the PAIR UI.
+
+PAIR must not copy or persist Mesh-LLM invite tokens as a workaround.
+
+## API contract
+
+The eventual Mesh-LLM manager integration should provide:
+
+- `mesh:status`
+- `mesh:setup`
+- `mesh:start`
+- `mesh:stop`
+- `mesh:restart`
+- `mesh:peers`
+
+The status payload should identify:
+
+- Mesh-LLM installed/version;
+- Tailscale availability and authorization state;
+- tailnet hostname/address;
+- Mesh-LLM network backend;
+- peer count;
+- local and peer model inventory;
+- API readiness.
+
+## Security boundary
+
+Tailscale provides network reachability and device/application identity. Mesh-LLM should continue authenticating its own protocol messages rather than treating possession of a tailnet address as sufficient proof of Mesh-LLM protocol identity.
+
+For the initial PAIR integration, only explicitly configured/managed Mesh-LLM peers should be admitted.
+
+## Current implementation status
+
+The PAIR integration branch records this contract and the upstream Mesh-LLM work item. Full end-to-end implementation requires write access to a Mesh-LLM fork because the upstream repository is currently pull-only for this GitHub connection.
