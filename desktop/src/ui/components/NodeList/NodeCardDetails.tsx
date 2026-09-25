@@ -3,7 +3,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Flex, Stack } from '@nvidia/foundations-react-core'
-import { BarChartOutlined, SettingsOutlined } from '@/ui/components/icons'
+import { BarChartOutlined, Check, ContentCopy, SettingsOutlined } from '@/ui/components/icons'
 import { DismissibleTooltip } from '@/ui/components/DismissibleTooltip/DismissibleTooltip'
 import type { NodeItem } from '@/shared/types/nodes'
 import { useMetricsStore } from '@/ui/stores/metrics.store'
@@ -36,6 +36,8 @@ function NodeCardDetails({ node }: NodeCardDetailsProps) {
     const isLocal = useConnectionStore(state => state.selfId === node.id)
     const [isExpanded, setIsExpanded] = useState(false)
     const [isEngineSettingsExpanded, setIsEngineSettingsExpanded] = useState(false)
+    const [diagnosticsCopied, setDiagnosticsCopied] = useState(false)
+    const diagnosticsCopyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
     // Mount the heavy engine editor only after the first expand so N node cards
     // don't each render a full BackendRow stack while collapsed.
     const [hasOpenedEngineSettings, setHasOpenedEngineSettings] = useState(false)
@@ -118,6 +120,48 @@ function NodeCardDetails({ node }: NodeCardDetailsProps) {
 
     const jobCount = useNodeActiveJobCount(node.id)
 
+    useEffect(() => {
+        return () => {
+            if (diagnosticsCopyTimer.current !== undefined) {
+                clearTimeout(diagnosticsCopyTimer.current)
+            }
+        }
+    }, [])
+
+    const copyDiagnostics = useCallback(async () => {
+        const diagnostics = {
+            node: {
+                id: node.id,
+                name: node.name,
+                status: node.status,
+                os: node.os,
+                ipAddress: node.ipAddress,
+                allIpAddresses: node.allIpAddresses
+            },
+            hardware: {
+                cpu: node.topology.cpu,
+                gpus: node.topology.gpus,
+                ramBytes: node.topology.ram,
+                storage: node.topology.storage,
+                inferenceHardwareIds: node.topology.inferenceHardwareIds
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(diagnostics, null, 2))
+            setDiagnosticsCopied(true)
+            if (diagnosticsCopyTimer.current !== undefined) {
+                clearTimeout(diagnosticsCopyTimer.current)
+            }
+            diagnosticsCopyTimer.current = setTimeout(() => {
+                setDiagnosticsCopied(false)
+                diagnosticsCopyTimer.current = undefined
+            }, 1800)
+        } catch {
+            setDiagnosticsCopied(false)
+        }
+    }, [node])
+
     // Performance chart and engine settings are mutually exclusive — opening one
     // collapses the other so only a single section is ever expanded per card.
     const togglePerformance = useCallback(() => {
@@ -193,6 +237,22 @@ function NodeCardDetails({ node }: NodeCardDetailsProps) {
 
     const expandButtons = (placement: 'left' | 'top') => (
         <>
+            <DismissibleTooltip slotContent="Copy node diagnostics" placement={placement}>
+                <Button
+                    kind="tertiary"
+                    color="neutral"
+                    size="tiny"
+                    className="px-2"
+                    onClick={copyDiagnostics}
+                    aria-label={diagnosticsCopied ? 'Node diagnostics copied' : 'Copy node diagnostics'}
+                >
+                    {diagnosticsCopied ? (
+                        <Check style={{ fontSize: 14 }} />
+                    ) : (
+                        <ContentCopy style={{ fontSize: 14 }} />
+                    )}
+                </Button>
+            </DismissibleTooltip>
             <DismissibleTooltip slotContent="Show performance" placement={placement}>
                 <Button
                     kind={isExpanded ? 'primary' : 'tertiary'}
