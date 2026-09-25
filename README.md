@@ -182,6 +182,39 @@ invited.
 The [Getting Started Guide](docs/getting-started.mdx) covers the same ground in
 detail, plus pairing, ports, and connecting your own applications.
 
+## MeshLLM and Tailscale
+
+This fork can be used alongside MeshLLM for a Tailscale-private execution
+network. PAIR remains the request router; MeshLLM remains the execution and
+mesh layer. They are separate services in this fork, so installing PAIR does
+not currently install MeshLLM or make MeshLLM an automatic PAIR engine.
+
+For a MeshLLM worker on your tailnet, use:
+
+```bash
+mesh-llm serve --auto --mesh-discovery-mode tailscale
+mesh-llm setup --service
+```
+
+MeshLLM Tailscale discovery accepts explicitly tagged `tag:mesh-llm` peers.
+After a successful discovery or invite-token join, the MeshLLM worker remembers
+the normal mesh invite token in `~/.mesh-llm/invite.token`, allowing its
+background service to reconnect after a process or machine restart. Linux
+workers that must start before interactive login can enable user lingering:
+
+```bash
+sudo loginctl enable-linger $USER
+```
+
+See the [MeshLLM + Tailscale guide](docs/meshllm-tailscale.mdx) for the
+deployment boundary and troubleshooting notes.
+## Fork maintenance
+
+This fork periodically syncs `develop` with
+[NVIDIA/Personal-AI-Router](https://github.com/NVIDIA/Personal-AI-Router). The
+sync job never force-pushes `develop` and stops before pushing when upstream
+and fork changes conflict. The merged upstream history remains visible in the
+fork.
 ## Uninstalling
 
 Removing PAIR and removing your data are separate steps, and the default is to
@@ -293,7 +326,7 @@ feedback and contributions will help shape priorities.
 - [ ] EXO support.
 - [ ] ComfyUI integration.
 - [ ] Unsloth support.
-- [ ] Tailscale integration.
+- [x] Tailscale integration.
 
 ### Routing and clusters
 

@@ -100,7 +100,21 @@ function NodeList() {
     )
 
     if (allNodes.length === 0) {
-        return <Stack className="grow min-w-0 h-full" />
+        return (
+            <Stack
+                className="grow min-w-0 h-full items-center justify-center px-6"
+                data-node-list-empty
+            >
+                <Text kind="body/bold/md">No nodes connected yet</Text>
+                <Text
+                    kind="body/regular/sm"
+                    className="text-subtle-color text-center max-w-120"
+                >
+                    Pair another machine from Settings → Cluster. Once it connects,
+                    it will appear here automatically.
+                </Text>
+            </Stack>
+        )
     }
 
     const visibleNodeCount = online.length + offline.length
