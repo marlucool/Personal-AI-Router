@@ -11,17 +11,22 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: pair-upstream-sync-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   sync:
-    runs-on: ubuntu-latest
-
+    name: Merge upstream develop
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
+          persist-credentials: true
 
-      - name: Sync fork branches
+      - name: Sync fork develop
         shell: bash
         run: |
           set -euo pipefail
@@ -29,15 +34,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git remote add upstream https://github.com/NVIDIA/Personal-AI-Router.git
-          git fetch upstream develop
-
-          # Keep develop current with NVIDIA while preserving fork-only commits.
+          git fetch origin develop
+          git fetch https://github.com/NVIDIA/Personal-AI-Router.git develop:refs/remotes/upstream/develop
           git checkout develop
-          git merge --no-edit upstream/develop
-          git push origin develop
+          git reset --hard origin/develop
 
-          # Rebase the custom branch onto the newly-synced fork develop.
-          git checkout legacy-gpu-support
-          git rebase origin/develop
-          git push --force-with-lease origin legacy-gpu-support
+          if git merge-base --is-ancestor upstream/develop HEAD; then
+            echo "Fork develop already contains NVIDIA upstream develop."
+            exit 0
+          fi
+
+          if ! git merge --no-edit --no-ff upstream/develop; then
+            git merge --abort || true
+            echo "::error::NVIDIA upstream changes conflict with fork-only changes."
+            echo "develop was left untouched. Resolve the conflict in a dedicated sync change, then rerun this workflow."
+            exit 1
+          fi
+
+          git push origin develop
+          echo "Synced fork develop with NVIDIA upstream."
