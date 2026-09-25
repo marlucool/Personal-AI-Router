@@ -50,12 +50,12 @@ Restart PAIR after setting the variable.
 
 When enabled, PAIR's node-info service:
 
-1. assigns stable IDs to detected GPUs;
+1. assigns hardware-stable IDs when the platform exposes a hardware-derived GPU identifier; static-only detectors use a host-plus-index fallback that is only best-effort stable;
 2. publishes those IDs in the node inventory; and
 3. reports detected NVIDIA adapters in `inference_hardware_ids`.
 
 The desktop uses the backend-provided GPU IDs when present, so an explicitly
-enabled legacy NVIDIA node remains visible as inference-capable metadata.
+enabled legacy NVIDIA node remains visible as inference-capable metadata. The durable-identity guarantee applies only when a hardware-derived identifier is available; the static-only fallback may change if GPU enumeration order changes.
 
 When the variable is not enabled, the fork does not apply this override.
 
