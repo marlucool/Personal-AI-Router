@@ -1,0 +1,75 @@
+# MeshLLM + Tailscale
+
+This fork can be paired with MeshLLM when Tailscale is the private network
+boundary between machines.
+
+## Roles
+
+PAIR is the request router and desktop control surface. MeshLLM is the
+execution/mesh layer. The two projects remain separate services in this fork;
+PAIR does not currently install MeshLLM automatically or register it as a
+native inference engine.
+
+For mixed GPU systems, keep CUDA and Vulkan workers in separate MeshLLM
+processes. PAIR routes independent requests to nodes; it does not pool VRAM
+across machines.
+
+## Tailscale worker setup
+
+On each MeshLLM worker:
+
+```bash
+mesh-llm serve --auto --mesh-discovery-mode tailscale
+```
+
+For a long-running worker, install the background service:
+
+```bash
+mesh-llm setup --service
+```
+
+Only Tailscale peers explicitly tagged `tag:mesh-llm` are eligible for automatic
+MeshLLM worker discovery. Tailnet membership alone is not the MeshLLM
+application membership mechanism.
+
+## Reconnect after restart
+
+A successful MeshLLM join now persists the normal mesh invite token in
+`~/.mesh-llm/invite.token`, unless the join credential is already file-backed.
+The service starts a plain `mesh-llm serve`, so the remembered token is enough
+to reconnect without re-running the pairing command.
+
+For Linux services that must start before a user session:
+
+```bash
+sudo loginctl enable-linger $USER
+```
+
+If the invite token is supplied through `MESH_LLM_JOIN_FILE`, the file is
+re-read during rejoin, so rotating the credential does not require editing the
+service definition.
+
+## Troubleshooting
+
+Check the local Tailscale/mesh state:
+
+```bash
+mesh-llm doctor tailscale
+```
+
+List reachable MeshLLM peers and their probe latency:
+
+```bash
+mesh-llm discover --mesh-discovery-mode tailscale
+```
+
+The Tailscale doctor does not print or serialize invite tokens. A worker that
+does not appear should first be checked for Tailscale connectivity, the
+`tag:mesh-llm` tag, the MeshLLM management API, and the selected
+`--mesh-discovery-mode tailscale`.
+
+## Boundary
+
+Tailscale provides the private transport and peer trust boundary. MeshLLM still
+performs its own application-level membership and peer authentication. PAIR
+still decides where each independent inference request is routed.
