@@ -47,29 +47,40 @@ set. The scheduler ranks node pressure from compact GPU telemetry; it does not
 model VRAM capacity, compute capability, or device affinity.
 
 Consequently, no source path in this checkout rejects the GTX 980, GTX 1070, or
-RTX 2080 Ti by architecture name or compute capability. PAIR can route a model
-only after an installed inference engine has successfully loaded it and
-advertised it. A failure to initialize CUDA or Vulkan is owned by that engine or
-by a MeshLLM runtime, not by the PAIR node scanner or scheduler.
+RTX 2080 Ti by architecture name or compute capability. PAIR's routing contract
+is based on the engine's advertised model inventory; the model does not have to
+be resident at the instant PAIR first observes the engine, but a request is only
+eligible when the selected engine advertises that model. A failure to initialize
+CUDA or Vulkan is owned by that engine or by a MeshLLM runtime, not by the PAIR
+node scanner or scheduler.
 
 ### Network boundary
 
 PAIR's cluster transport already treats reachability separately from discovery:
 remote model inventory is fetched through pinned mutual TLS, while LAN discovery
-uses mDNS. The address-selection helper excludes interfaces named `tailscale`,
-`tun`, and similar VPN names from its local candidates. A Tailscale address will
-therefore not be advertised automatically as a PAIR discovery address in this
-checkout. A cross-network design must either use PAIR's explicit/manual-node
+uses mDNS. The local address-selection helper deliberately avoids publishing
+virtual/VPN interfaces such as `tailscale` and `tun` as ordinary LAN candidates.
+That is not a statement that Tailscale addresses can never be used: an explicit
+manual-node or separately authenticated transport can still target a Tailscale
+endpoint. The important boundary is that PAIR must not silently change its
+cluster trust policy merely because an interface happens to be a tailnet
+interface. A cross-network design must either use PAIR's explicit/manual-node
 path or add a reviewed, authenticated transport/discovery design; it must not
 make the desktop choose a Tailscale address or bypass PAIR's cluster trust.
 
-## MeshLLM facts that must be established from source
+## MeshLLM facts established from the integration fork
 
-MeshLLM is not present in this checkout, and its repository/revision and the
-actual mixed-GPU error were not available while this document was written. Do
-not infer a solution from a marketing GPU name or from a generic CUDA support
-table. Before changing PAIR, capture all of the following against a pinned
-MeshLLM revision:
+The current integration work is pinned to MeshLLM fork branch
+`pair-mixed-gpu-integration`, head `5a6a170d663b5ded5822630999c4e41c25dac8e9`,
+corresponding to MeshLLM PR #1. The source confirms that Tailscale discovery and
+a Tailscale-only join-bootstrap path are being added, while the native runtime
+loader remains process-global. The fork therefore treats mixed CUDA/Vulkan
+execution as a separate-worker/process concern rather than claiming one process
+can independently load both backends.
+
+This document is an integration evidence record, not a claim that physical GTX
+980/GTX 1070 inference has already passed. Before changing PAIR, keep collecting
+all of the following against the pinned MeshLLM revision:
 
 | Question | Evidence required | Why it changes the design |
 | --- | --- | --- |
@@ -178,7 +189,9 @@ from host hypervisor, passthrough, and unprivileged-container limitations.
 ## Required proof before changing the PR out of draft
 
 1. Pin and inspect the MeshLLM source/revision and resolve the decision gate
-   above.
+   above. The current source evidence points to separate MeshLLM worker/process
+   boundaries for mixed CUDA/Vulkan; that remains an implementation requirement,
+   not a completed physical validation.
 2. Prove one model load and inference on each physical lane: GTX 980 with the
    selected backend, GTX 1070 with the selected backend, and RTX 2080 Ti with
    its selected backend.
@@ -193,6 +206,22 @@ from host hypervisor, passthrough, and unprivileged-container limitations.
    owners.
 6. Keep physical GPU workflows manual and self-hosted. Hosted CI can validate
    contracts and fixtures, but cannot substitute for device/runtime inference.
+
+## Current integration status
+
+The MeshLLM Tailscale work is an implementation PR, not yet proof that PAIR can
+route production inference to mixed CUDA/Vulkan workers. The current sequence is:
+
+`Tailscale membership/trust → MeshLLM peer discovery → Tailscale-only join bootstrap
+→ existing invite-token authentication → normal mesh membership`.
+
+PAIR should integrate at the engine/process boundary only after the model-list,
+health, streaming, failure, and worker-isolation contracts have been demonstrated.
+The Tailscale path must remain an explicit opt-in trust mode and must not turn
+arbitrary tailnet membership into MeshLLM worker authorization.
+
+Physical GTX 980, GTX 1070, and RTX 2080 Ti inference remains a separate manual
+self-hosted validation gate.
 
 Do not mark the legacy-GPU pull request ready until all six proofs are attached
 to the change review with sanitized logs and the exact runtime/build evidence.
