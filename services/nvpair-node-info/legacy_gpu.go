@@ -33,10 +33,12 @@ func isNvidiaGPU(name string) bool {
 	return strings.Contains(strings.ToLower(name), "nvidia")
 }
 
-// gpuHardwareID returns the stable UI identity used by the fork's readiness
-// list. statsKey is UUID/LUID/IORegistry-derived on platforms with a dynamic
-// GPU source, while the host UUID + index fallback keeps the contract usable
-// for a static-only detector.
+// gpuHardwareID returns the readiness identity used by the fork. When the
+// platform exposes a hardware-derived statsKey (NVIDIA UUID, Windows LUID, or
+// IORegistry identifier), the resulting ID is stable across enumeration-order
+// changes. Static-only detectors have no hardware-derived key, so the fallback
+// is host UUID + inventory index and is only best-effort stable; callers must
+// not treat that fallback as a durable hardware identity across reordering.
 func gpuHardwareID(hostUUID string, gpu GPUInfo, index int) string {
 	key := gpu.statsKey
 	if key == "" {
