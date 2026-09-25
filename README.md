@@ -215,6 +215,8 @@ This fork periodically syncs `develop` with
 sync job never force-pushes `develop` and stops before pushing when upstream
 and fork changes conflict. The merged upstream history remains visible in the
 fork.
+
+See [Upstream synchronization](docs/UPSTREAM_SYNC.md) for the exact automatic and manual procedure.
 ## Uninstalling
 
 Removing PAIR and removing your data are separate steps, and the default is to
