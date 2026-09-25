@@ -11,33 +11,51 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sync-upstream-develop
+  cancel-in-progress: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          ref: develop
           fetch-depth: 0
 
-      - name: Sync fork branches
+      - name: Sync fork branch
         shell: bash
+        env:
+          UPSTREAM_URL: https://github.com/NVIDIA/Personal-AI-Router.git
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git remote add upstream https://github.com/NVIDIA/Personal-AI-Router.git
-          git fetch upstream develop
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch --no-tags upstream develop
 
-          # Keep develop current with NVIDIA while preserving fork-only commits.
-          git checkout develop
-          git merge --no-edit upstream/develop
+          if git merge-base --is-ancestor upstream/develop HEAD; then
+            echo "develop is already synchronized with NVIDIA upstream."
+            exit 0
+          fi
+
+          if ! git merge --no-edit --no-ff upstream/develop; then
+            git merge --abort || true
+            {
+              echo "## Upstream sync requires manual conflict resolution"
+              echo
+              echo "NVIDIA's develop and this fork's develop have conflicting changes."
+              echo "No changes were pushed."
+              echo
+              echo "After resolving the merge locally and pushing the result, future scheduled runs can resume automatically."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
           git push origin develop
-
-          # Rebase the custom branch onto the newly-synced fork develop.
-          git checkout legacy-gpu-support
-          git rebase origin/develop
-          git push --force-with-lease origin legacy-gpu-support
+          echo "Merged NVIDIA/Personal-AI-Router develop into the fork's develop." >> "$GITHUB_STEP_SUMMARY"
