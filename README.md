@@ -182,6 +182,40 @@ invited.
 The [Getting Started Guide](docs/getting-started.mdx) covers the same ground in
 detail, plus pairing, ports, and connecting your own applications.
 
+## MeshLLM and Tailscale
+
+This fork can be used alongside MeshLLM for a Tailscale-private execution
+network. PAIR remains the request router; MeshLLM remains the execution and
+mesh layer. They are separate services in this fork, so installing PAIR does
+not currently install MeshLLM or make MeshLLM an automatic PAIR engine.
+
+For a MeshLLM worker on your tailnet, use:
+
+```bash
+mesh-llm serve --auto --mesh-discovery-mode tailscale
+mesh-llm setup --service
+```
+
+MeshLLM Tailscale discovery accepts explicitly tagged `tag:mesh-llm` peers.
+After a successful discovery or invite-token join, the MeshLLM worker remembers
+the normal mesh invite token in `~/.mesh-llm/invite.token`, allowing its
+background service to reconnect after a process or machine restart. Linux
+workers that must start before interactive login can enable user lingering:
+
+```bash
+sudo loginctl enable-linger $USER
+```
+
+See the [MeshLLM + Tailscale guide](docs/meshllm-tailscale.mdx) for the
+deployment boundary and troubleshooting notes.
+## Fork maintenance
+
+This fork periodically synchronizes with NVIDIA's upstream develop branch. The sync job preserves fork-specific changes and stops before pushing when an upstream change conflicts, so an update cannot silently overwrite local work.
+
+For the fork-specific legacy GPU compatibility, Tailscale/MeshLLM deployment notes, and current sync behavior, use the links below.
+
+[Legacy GPU support](docs/legacy-gpu-support.mdx) · [MeshLLM + Tailscale](docs/meshllm-tailscale.mdx) · [Upstream sync](docs/UPSTREAM_SYNC.md)
+
 ## Uninstalling
 
 Removing PAIR and removing your data are separate steps, and the default is to
@@ -293,7 +327,7 @@ feedback and contributions will help shape priorities.
 - [ ] EXO support.
 - [ ] ComfyUI integration.
 - [ ] Unsloth support.
-- [ ] Tailscale integration.
+- [x] Tailscale integration.
 
 ### Routing and clusters
 
