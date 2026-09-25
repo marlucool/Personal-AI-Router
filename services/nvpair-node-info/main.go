@@ -28,6 +28,7 @@ import (
 )
 
 type GPUInfo struct {
+	ID                 string `json:"id,omitempty"`
 	Name               string `json:"name"`
 	VramBytes          uint64 `json:"vram_bytes,omitempty"`
 	VramUsedBytes      uint64 `json:"vram_used_bytes,omitempty"`
@@ -72,8 +73,9 @@ type MemoryInfo struct {
 }
 
 type NodeInfoResponse struct {
-	GPUs           []GPUInfo   `json:"GPUs"`
-	CPU            *CPUInfo    `json:"cpu,omitempty"`
+	GPUs                 []GPUInfo   `json:"GPUs"`
+	InferenceHardwareIDs []string    `json:"inference_hardware_ids"`
+	CPU                  *CPUInfo    `json:"cpu,omitempty"`
 	Memory         *MemoryInfo `json:"memory,omitempty"`
 	TelemetryValid bool        `json:"telemetryValid"`
 	MSSince        int64       `json:"msSince"`
@@ -189,12 +191,14 @@ func buildResponseAt(gpus []GPUInfo, cpuStatic *CPUInfo, memTotal uint64, snap s
 	}
 
 	telemetryValid, msSince := telemetryStatus(snap.GPUSampledAt, now)
+	inferenceHardwareIDs, _ := applyLegacyGPUCompatibility(hostUUID, outGPUs)
 	resp := NodeInfoResponse{
-		GPUs:           outGPUs,
-		TelemetryValid: telemetryValid,
-		MSSince:        msSince,
-		HostUUID:       hostUUID,
-		ClusterUUID:    clusterUUID,
+		GPUs:                 outGPUs,
+		InferenceHardwareIDs: inferenceHardwareIDs,
+		TelemetryValid:       telemetryValid,
+		MSSince:              msSince,
+		HostUUID:             hostUUID,
+		ClusterUUID:          clusterUUID,
 	}
 	if cpuStatic != nil {
 		cpu := *cpuStatic
