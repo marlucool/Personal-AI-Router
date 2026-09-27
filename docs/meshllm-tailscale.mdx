@@ -43,10 +43,10 @@ application membership mechanism.
 The service now persists the selected runtime startup arguments. For Tailscale
 workers, that means `--auto --mesh-discovery-mode tailscale` is still present
 after a reboot, so the worker can discover the tagged peer and rejoin without
-running the old verification-number flow again. After a successful join,
-MeshLLM also persists the normal mesh invite token in
-`~/.mesh-llm/invite.token`; that token is a secondary application-level
-credential, not the Tailscale discovery mechanism.
+running the old verification-number flow again. An explicit MeshLLM
+invite-token join is persisted in `~/.mesh-llm/invite.token`; Tailscale
+discovery itself does not persist an invite token. The token is a secondary
+application-level credential, not the Tailscale discovery mechanism.
 
 For Linux services that must start before a user session:
 
