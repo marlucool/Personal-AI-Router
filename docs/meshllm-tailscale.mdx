@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # MeshLLM + Tailscale
 
 This fork can be paired with MeshLLM when Tailscale is the private network
@@ -22,10 +27,11 @@ On each MeshLLM worker:
 mesh-llm serve --auto --mesh-discovery-mode tailscale
 ```
 
-For a long-running worker, install the background service:
+For a long-running worker, install the background service with the same
+auto-discovery settings:
 
 ```bash
-mesh-llm setup --service
+mesh-llm setup --service --auto --mesh-discovery-mode tailscale
 ```
 
 Only Tailscale peers explicitly tagged `tag:mesh-llm` are eligible for automatic
@@ -34,10 +40,13 @@ application membership mechanism.
 
 ## Reconnect after restart
 
-A successful MeshLLM join now persists the normal mesh invite token in
-`~/.mesh-llm/invite.token`, unless the join credential is already file-backed.
-The service starts a plain `mesh-llm serve`, so the remembered token is enough
-to reconnect without re-running the pairing command.
+The service now persists the selected runtime startup arguments. For Tailscale
+workers, that means `--auto --mesh-discovery-mode tailscale` is still present
+after a reboot, so the worker can discover the tagged peer and rejoin without
+running the old verification-number flow again. After a successful join,
+MeshLLM also persists the normal mesh invite token in
+`~/.mesh-llm/invite.token`; that token is a secondary application-level
+credential, not the Tailscale discovery mechanism.
 
 For Linux services that must start before a user session:
 

@@ -193,14 +193,21 @@ For a MeshLLM worker on your tailnet, use:
 
 ```bash
 mesh-llm serve --auto --mesh-discovery-mode tailscale
-mesh-llm setup --service
+```
+
+For a worker that should keep that Tailscale auto-discovery configuration after
+a reboot, install its background service with the same settings:
+
+```bash
+mesh-llm setup --service --auto --mesh-discovery-mode tailscale
 ```
 
 MeshLLM Tailscale discovery accepts explicitly tagged `tag:mesh-llm` peers.
-After a successful discovery or invite-token join, the MeshLLM worker remembers
-the normal mesh invite token in `~/.mesh-llm/invite.token`, allowing its
-background service to reconnect after a process or machine restart. Linux
-workers that must start before interactive login can enable user lingering:
+After a successful discovery or invite-token join, MeshLLM also remembers the
+normal mesh invite token in `~/.mesh-llm/invite.token`. The service startup
+command separately retains the selected Tailscale auto-discovery settings, so
+a reboot does not silently fall back to plain `mesh-llm serve`. Linux workers
+that must start before interactive login can enable user lingering:
 
 ```bash
 sudo loginctl enable-linger $USER
