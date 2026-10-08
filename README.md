@@ -38,7 +38,7 @@ one, and both report live GPU and memory use throughout.
 | **Architectures** | x64 and arm64 on all three. Windows on ARM is experimental. |
 | **Installers** | Windows `.exe`; Linux `.deb`; macOS `.dmg`. On other Linux distributions, [build from source](docs/building.mdx). |
 | **Mixing nodes** | Windows, Linux, and macOS nodes can all be paired with each other |
-| **Inference engines** | Ollama and LM Studio |
+| **Inference engines** | Ollama, LM Studio, and llama.cpp |
 
 ### Fork-specific legacy GPU compatibility
 
@@ -120,15 +120,19 @@ you want by its full filename instead.
   status there.
 
 - **Get an engine running.** On the node's card, open **Engine settings** and
-  select **Install** next to Ollama or LM Studio. PAIR downloads and sets the
-  engine up for you, so nothing needs to be in place beforehand. If PAIR already
-  found an engine you installed yourself, start that one instead.
+  select **Install** next to Ollama, LM Studio, or llama.cpp. PAIR downloads and
+  sets the engine up for you, so nothing needs to be in place beforehand. The
+  llama.cpp install is a separate, on-demand download and is not selected during
+  first-run setup by default.
 
   ![The Install engines dialog with Ollama downloading, reporting progress as it installs.](docs/assets/onboarding/engine-lifecycle/01-engine-installing.png)
 
 - **Add a model.** Select **Add model** on the same card and download one.
   `qwen4:12b` is used for this example; it can be replaced with a model of your
-  choice.
+  choice. llama.cpp populates this list from popular GGUF repositories on
+  Hugging Face. Type to filter the list, or press Enter to search the wider
+  public catalog. Its exact IDs include the repository and quantization, such
+  as `ggml-org/gemma-3-1b-it-GGUF:Q4_K_M`.
 
   ![A node card with its engine expanded, one model pulling and the Add model button beside the list.](docs/assets/onboarding/getting-started/07-add-model.png)
 
@@ -169,8 +173,9 @@ The reply is ordinary OpenAI-shaped JSON, abbreviated here:
 }
 ```
 
-If you changed a port, or you are using LM Studio rather than Ollama, copy the
-URL from **Endpoints → API endpoints** instead of assuming the one above.
+If you changed a port, or you are using LM Studio or llama.cpp rather than
+Ollama, copy the URL from **Endpoints → API endpoints** instead of assuming the
+one above.
 
 That is a single machine working. To route across machines, pair a second one
 from **Settings → Cluster** and repeat the engine and model steps there. The
@@ -236,23 +241,31 @@ your data. Decline and it stays; accept and it is removed.
 **Linux.** `sudo apt remove nvpair` uninstalls the application and keeps your
 data. Use `sudo apt purge nvpair` to remove the data as well. Run
 `dpkg -l | grep -i pair` first if you need to confirm the installed package name.
+A purge removes the engines PAIR installed under its own data directory, but not
+one a vendor installer placed in your home, as LM Studio does — uninstall that
+engine from PAIR before removing the package, or use its own uninstaller.
 
 **macOS.** Run the uninstaller that ships inside the app bundle. It stops PAIR,
 removes its firewall rules, unregisters its privileged helper, and then removes
 the application:
 
 ```bash
-sudo "/Applications/PAIR.app/Contents/Resources/installer-tools/uninstall-macos.sh"
+sudo "/Applications/NVIDIA PAIR.app/Contents/Resources/installer-tools/uninstall-macos.sh"
 ```
 
-Add `--purge` to remove your data as well. Dragging PAIR to the Trash instead
+An install from before the app was renamed is still called `PAIR.app`; use
+`/Applications/PAIR.app` in the path instead. Add `--purge` to remove your data
+as well. Dragging PAIR to the Trash instead
 leaves the privileged helper registered, so use the uninstaller.
 
 Your data means settings, logs, cluster identity and certificates, and any engine
-PAIR installed for you. **Model weights are not touched** — they live in the
-engine's own storage, such as `~/.ollama`, so removing PAIR does not delete the
-models you downloaded. Delete those through the engine, or by removing its
-directory.
+PAIR installed for you. An engine the uninstaller cannot remove — one still
+holding a file open, say — is left in place rather than stopping the uninstall;
+remove it with its own uninstaller. **Model weights are not touched** — they live in the
+engine's own storage (`~/.ollama`, `~/.llamacpp`, `~/.lmstudio/models`), so
+removing PAIR does not delete the models you downloaded. Delete those through the
+engine, or by removing its directory. An engine you installed yourself is also
+left alone.
 
 **To clear your data without uninstalling,** use **Settings → Service → Reset app
 data**. It removes the same set — settings, logs, cluster identity and
@@ -330,7 +343,7 @@ feedback and contributions will help shape priorities.
 
 ### Engines and integrations
 
-- [ ] llama.cpp support.
+- [x] llama.cpp support.
 - [ ] vLLM support.
 - [ ] EXO support.
 - [ ] ComfyUI integration.
